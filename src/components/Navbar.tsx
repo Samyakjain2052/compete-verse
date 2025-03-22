@@ -53,10 +53,10 @@ const Navbar: React.FC = () => {
                 <div className="absolute inset-0 bg-primary rounded-md rotate-45 animate-pulse-slow"></div>
                 <div className="absolute inset-0.5 bg-background rounded-md rotate-45"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-primary font-bold">B</span>
+                  <span className="text-primary font-bold">S</span>
                 </div>
               </div>
-              <span className="font-bold text-xl">Bolt<span className="text-primary">.new</span></span>
+              <span className="font-bold text-xl">Saggle<span className="text-primary">.new</span></span>
             </Link>
             
             <nav className="hidden md:flex ml-10 space-x-1">

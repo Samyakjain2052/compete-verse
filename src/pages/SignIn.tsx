@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -69,18 +71,16 @@ const SignIn = () => {
       setIsSubmitting(true);
       
       try {
-        // Simulating API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Use the actual sign in function from context
+        await signIn(formData.email, formData.password);
         
         // Success
         toast.success("Signed in successfully!", {
           description: "Welcome back to the platform.",
         });
         
-        // Redirect to dashboard after a short delay
-        setTimeout(() => {
-          navigate("/");
-        }, 1000);
+        // Redirect to dashboard
+        navigate("/");
       } catch (error) {
         toast.error("Failed to sign in.", {
           description: "Please check your credentials and try again.",

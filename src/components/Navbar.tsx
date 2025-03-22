@@ -1,14 +1,18 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, Menu, X, User, ChevronDown } from "lucide-react";
+import { Search, Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +29,12 @@ const Navbar: React.FC = () => {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    toast.success("Signed out successfully");
+    navigate("/");
   };
 
   const navLinks = [
@@ -88,12 +98,30 @@ const Navbar: React.FC = () => {
             </div>
             
             <div className="hidden md:flex items-center space-x-1">
-              <Button variant="ghost" size="sm" className="text-sm font-medium">
-                Sign In
-              </Button>
-              <Button size="sm" className="text-sm font-medium">
-                Sign Up
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  <span className="text-sm font-medium mr-2">
+                    {user?.email}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-sm font-medium">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/sign-in">
+                    <Button variant="ghost" size="sm" className="text-sm font-medium">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/sign-up">
+                    <Button size="sm" className="text-sm font-medium">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
             
             <div className="hidden md:flex items-center">
@@ -152,12 +180,25 @@ const Navbar: React.FC = () => {
           </nav>
           
           <div className="flex items-center space-x-2 mt-4 pt-4 border-t border-border">
-            <Button variant="outline" size="sm" className="w-full text-sm">
-              Sign In
-            </Button>
-            <Button size="sm" className="w-full text-sm">
-              Sign Up
-            </Button>
+            {isAuthenticated ? (
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full text-sm">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            ) : (
+              <>
+                <Link to="/sign-in" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full text-sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/sign-up" className="w-full">
+                  <Button size="sm" className="w-full text-sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

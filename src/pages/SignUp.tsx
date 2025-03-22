@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -90,7 +92,7 @@ const SignUp = () => {
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFormData({
       ...formData,
-      role: e.target.value,
+      role: e.target.value as "participant" | "host",
     });
   };
 
@@ -101,12 +103,12 @@ const SignUp = () => {
       setIsSubmitting(true);
       
       try {
-        // Simulating API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Use the actual sign up function from context
+        await signUp(formData.email, formData.password, formData.role as "participant" | "host");
         
         // Success
         toast.success("Account created successfully!", {
-          description: "You will be redirected to sign in.",
+          description: "You can now sign in with your credentials.",
         });
         
         // Redirect to sign in page after a short delay

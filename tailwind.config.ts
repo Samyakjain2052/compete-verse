@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -84,11 +85,102 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { 
+						opacity: '0' 
+					},
+					'100%': { 
+						opacity: '1' 
+					},
+				},
+				'fade-out': {
+					'0%': { 
+						opacity: '1' 
+					},
+					'100%': { 
+						opacity: '0' 
+					},
+				},
+				'slide-up': {
+					'0%': { 
+						transform: 'translateY(10px)',
+						opacity: '0' 
+					},
+					'100%': { 
+						transform: 'translateY(0)',
+						opacity: '1' 
+					},
+				},
+				'slide-down': {
+					'0%': { 
+						transform: 'translateY(-10px)',
+						opacity: '0' 
+					},
+					'100%': { 
+						transform: 'translateY(0)',
+						opacity: '1' 
+					},
+				},
+				'pulse-slow': {
+					'0%, 100%': { 
+						opacity: '1' 
+					},
+					'50%': { 
+						opacity: '0.8' 
+					},
+				},
+				'float': {
+					'0%, 100%': { 
+						transform: 'translateY(0)' 
+					},
+					'50%': { 
+						transform: 'translateY(-5px)' 
+					},
+				},
+				'background-shine': {
+					'from': {
+						backgroundPosition: '200% 0'
+					},
+					'to': {
+						backgroundPosition: '0% 0'
+					}
+				},
+				'spin-slow': {
+					'0%': { 
+						transform: 'rotate(0deg)' 
+					},
+					'100%': { 
+						transform: 'rotate(360deg)' 
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-out': 'fade-out 0.3s ease-out',
+				'slide-up': 'slide-up 0.4s ease-out',
+				'slide-down': 'slide-down 0.4s ease-out',
+				'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
+				'float': 'float 3s ease-in-out infinite',
+				'background-shine': 'background-shine 8s linear infinite',
+				'spin-slow': 'spin-slow 10s linear infinite'
+			},
+			backdropFilter: {
+				'none': 'none',
+				'blur': 'blur(20px)',
+			},
+			boxShadow: {
+				'subtle': '0 2px 10px rgba(0, 0, 0, 0.05)',
+				'glass': '0 8px 32px rgba(0, 0, 0, 0.06)',
+			},
+			transitionProperty: {
+				'height': 'height',
+				'spacing': 'margin, padding',
+			},
+			transitionTimingFunction: {
+				'elastic': 'cubic-bezier(0.25, 0.1, 0.25, 1.4)',
 			}
 		}
 	},

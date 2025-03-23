@@ -11,6 +11,7 @@ import CompetitionDetails from "./pages/CompetitionDetails";
 import HostCompetition from "./pages/HostCompetition";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/host" element={<HostCompetition />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/profile" element={<UserProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

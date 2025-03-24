@@ -1,6 +1,6 @@
 
 import axiosInstance from '@/lib/axios-config';
-import { Competition, CompetitionDetails } from '@/types/competition';
+import { Competition, CompetitionDetails, LeaderboardEntry } from '@/types/competition';
 
 const CompetitionService = {
   // Get all competitions with optional filters
@@ -28,7 +28,7 @@ const CompetitionService = {
   // Submit a solution for a competition
   submitSolution: async (competitionId: string, formData: FormData) => {
     const response = await axiosInstance.post<{ success: boolean; message: string }>(
-      `/competitions/${competitionId}/submit`,
+      `/submissions`,
       formData,
       {
         headers: {
@@ -39,16 +39,34 @@ const CompetitionService = {
     return response.data;
   },
   
-  // Verify user ID for a competition
+  // Verify user ID for a competition (age verification)
   verifyId: async (competitionId: string, formData: FormData) => {
     const response = await axiosInstance.post<{ success: boolean; message: string }>(
-      `/competitions/${competitionId}/verify-id`,
+      `/competitions/${competitionId}/join`,
       formData,
       {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       }
+    );
+    return response.data;
+  },
+  
+  // Get competition datasets
+  getCompetitionDatasets: async (competitionId: string) => {
+    const response = await axiosInstance.get<{ 
+      trainData: string; 
+      testData: string; 
+      demoFile: string 
+    }>(`/competitions/${competitionId}/datasets`);
+    return response.data;
+  },
+  
+  // Get leaderboard for a competition
+  getLeaderboard: async (competitionId: string) => {
+    const response = await axiosInstance.get<LeaderboardEntry[]>(
+      `/competitions/${competitionId}/leaderboard`
     );
     return response.data;
   },

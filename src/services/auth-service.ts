@@ -13,23 +13,28 @@ export interface RegisterData extends LoginCredentials {
 
 const AuthService = {
   login: async (credentials: LoginCredentials) => {
-    const response = await axiosInstance.post<{ token: string; user: User }>('/auth/login', credentials);
+    const response = await axiosInstance.post<{ token: string }>('/auth/login', credentials);
     
-    // Save token and user data to localStorage
+    // Save token to localStorage
     localStorage.setItem('authToken', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
     
-    return response.data;
+    // Get user profile after login
+    const userResponse = await axiosInstance.get<User>('/auth/me');
+    localStorage.setItem('user', JSON.stringify(userResponse.data));
+    
+    return { token: response.data.token, user: userResponse.data };
   },
   
   register: async (data: RegisterData) => {
-    const response = await axiosInstance.post<{ token: string; user: User }>('/auth/register', data);
+    const response = await axiosInstance.post<User>('/auth/register', data);
     
-    // Save token and user data to localStorage
-    localStorage.setItem('authToken', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    // After registration, perform login to get token
+    const loginResponse = await AuthService.login({ 
+      email: data.email, 
+      password: data.password 
+    });
     
-    return response.data;
+    return loginResponse;
   },
   
   logout: () => {

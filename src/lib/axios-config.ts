@@ -1,9 +1,9 @@
 
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from "sonner";
 
 // Get the API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Create an Axios instance with default config
 const axiosInstance = axios.create({
@@ -16,7 +16,7 @@ const axiosInstance = axios.create({
 
 // Request interceptor - add auth token to headers
 axiosInstance.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // Get auth token from localStorage
     const token = localStorage.getItem('authToken');
     
@@ -61,7 +61,9 @@ axiosInstance.interceptors.response.use(
           break;
         default:
           // Get error message from response or use a default
-          const errorMsg = error.response.data?.message || "An error occurred";
+          const errorMsg = error.response.data && typeof error.response.data === 'object' 
+            ? (error.response.data as any).message || "An error occurred"
+            : "An error occurred";
           toast.error(errorMsg);
       }
     } else if (error.request) {

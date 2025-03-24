@@ -1,13 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-
-type UserRole = "participant" | "host";
-
-interface User {
-  id: string;
-  email: string;
-  role: UserRole;
-}
+import AuthService from "@/services/auth-service";
+import { toast } from "sonner";
+import { UserRole, User } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
@@ -25,10 +20,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage (for persistence)
-    const storedUser = localStorage.getItem("user");
+    // Check if user is stored in service
+    const storedUser = AuthService.getCurrentUser();
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
     setIsLoading(false);
   }, []);
@@ -36,16 +31,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // In a real app, this would make an API call to verify credentials
-      // For now, we'll simulate a successful login
-      const mockUser: User = {
-        id: "user-" + Math.random().toString(36).substr(2, 9),
-        email,
-        role: "participant", // Default role, would come from the backend in a real app
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+      const response = await AuthService.login({ email, password });
+      setUser(response.user);
+    } catch (error) {
+      console.error("Sign in error:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -54,24 +44,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
     try {
-      // In a real app, this would make an API call to create a new user
-      // For now, we'll simulate a successful registration
-      const mockUser: User = {
-        id: "user-" + Math.random().toString(36).substr(2, 9),
-        email,
-        role,
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+      const response = await AuthService.register({ email, password, role });
+      setUser(response.user);
+    } catch (error) {
+      console.error("Sign up error:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const signOut = (): void => {
+    AuthService.logout();
     setUser(null);
-    localStorage.removeItem("user");
+    toast.success("Signed out successfully");
   };
 
   return (

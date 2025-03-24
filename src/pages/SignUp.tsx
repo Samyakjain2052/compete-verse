@@ -17,7 +17,7 @@ const SignUp = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "participant", // Default role
+    role: "participant" as "participant" | "host", // Default role
     agreeToTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -104,16 +104,16 @@ const SignUp = () => {
       
       try {
         // Use the actual sign up function from context
-        await signUp(formData.email, formData.password, formData.role as "participant" | "host");
+        await signUp(formData.email, formData.password, formData.role);
         
         // Success
         toast.success("Account created successfully!", {
           description: "You can now sign in with your credentials.",
         });
         
-        // Redirect to sign in page after a short delay
+        // Redirect to home page after a short delay
         setTimeout(() => {
-          navigate("/sign-in");
+          navigate("/");
         }, 1500);
       } catch (error) {
         toast.error("Failed to create account.", {

@@ -6,115 +6,9 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { Search, Filter, X, Calendar, Users, Clock, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// Mock data for competitions
-const mockCompetitions = [
-  {
-    id: "ml-vision-challenge",
-    title: "ML Vision Challenge 2023",
-    host: "TechCorp AI",
-    deadlineDate: "October 15, 2023",
-    daysLeft: 5,
-    maxAge: 25,
-    participants: 342,
-    category: "data-science",
-    topUsers: [{ name: "Alex J.", position: 1 }, { name: "Maria S.", position: 2 }, { name: "Kevin L.", position: 3 }]
-  },
-  {
-    id: "data-analytics-comp",
-    title: "Global Data Analytics Competition",
-    host: "DataMinds Inc.",
-    deadlineDate: "November 20, 2023",
-    daysLeft: 21,
-    participants: 189,
-    category: "data-science",
-    topUsers: [{ name: "Sarah P.", position: 1 }, { name: "John D.", position: 2 }, { name: "Lisa M.", position: 3 }]
-  },
-  {
-    id: "crypto-algo-challenge",
-    title: "Cryptocurrency Algorithm Challenge",
-    host: "BlockChain Partners",
-    deadlineDate: "December 5, 2023",
-    daysLeft: 30,
-    maxAge: 30,
-    participants: 267,
-    category: "software-development",
-    topUsers: [{ name: "Michael T.", position: 1 }, { name: "Anna K.", position: 2 }, { name: "David R.", position: 3 }]
-  },
-  {
-    id: "sustainable-dev-hackathon",
-    title: "Sustainable Development Hackathon",
-    host: "EcoTech Foundation",
-    deadlineDate: "November 1, 2023",
-    daysLeft: 7,
-    participants: 156,
-    maxAge: 27,
-    category: "software-development",
-    topUsers: [{ name: "Chris L.", position: 1 }, { name: "Emma W.", position: 2 }, { name: "Ryan P.", position: 3 }]
-  },
-  {
-    id: "nlp-innovation",
-    title: "NLP Innovation Prize",
-    host: "LanguageTech AI",
-    deadlineDate: "November 30, 2023",
-    daysLeft: 25,
-    participants: 210,
-    category: "data-science",
-    topUsers: [{ name: "Daniel K.", position: 1 }, { name: "Olivia S.", position: 2 }, { name: "James H.", position: 3 }]
-  },
-  {
-    id: "web3-development",
-    title: "Web3 Development Challenge",
-    host: "Blockchain Association",
-    deadlineDate: "December 15, 2023",
-    daysLeft: 40,
-    participants: 178,
-    category: "software-development",
-    topUsers: [{ name: "Thomas R.", position: 1 }, { name: "Sophie L.", position: 2 }, { name: "Ethan M.", position: 3 }]
-  },
-  {
-    id: "financial-case-study",
-    title: "Financial Markets Case Study",
-    host: "Global Finance Institute",
-    deadlineDate: "November 10, 2023",
-    daysLeft: 15,
-    maxAge: 26,
-    participants: 124,
-    category: "case-studies",
-    topUsers: [{ name: "Amanda B.", position: 1 }, { name: "Robert C.", position: 2 }, { name: "Eliza J.", position: 3 }]
-  },
-  {
-    id: "healthcare-innovation",
-    title: "Healthcare Innovation Challenge",
-    host: "MedTech Innovators",
-    deadlineDate: "January 5, 2024",
-    daysLeft: 60,
-    participants: 142,
-    category: "case-studies",
-    topUsers: [{ name: "William H.", position: 1 }, { name: "Grace T.", position: 2 }, { name: "Nathan P.", position: 3 }]
-  },
-  {
-    id: "mobile-app-challenge",
-    title: "Mobile App Development Challenge",
-    host: "AppWorld Conference",
-    deadlineDate: "November 25, 2023",
-    daysLeft: 28,
-    participants: 203,
-    category: "software-development",
-    topUsers: [{ name: "Oliver S.", position: 1 }, { name: "Mia L.", position: 2 }, { name: "Lucas K.", position: 3 }]
-  },
-  {
-    id: "quantum-computing",
-    title: "Quantum Computing Hackathon",
-    host: "Quantum Research Labs",
-    deadlineDate: "December 20, 2023",
-    daysLeft: 45,
-    maxAge: 28,
-    participants: 89,
-    category: "data-science",
-    topUsers: [{ name: "Benjamin F.", position: 1 }, { name: "Charlotte D.", position: 2 }, { name: "Henry A.", position: 3 }]
-  }
-];
+import CompetitionService from "@/services/competition-service";
+import { Competition } from "@/types/competition";
+import { useQuery } from "@tanstack/react-query";
 
 type FilterType = {
   searchTerm: string;
@@ -124,7 +18,6 @@ type FilterType = {
 };
 
 const Competitions: React.FC = () => {
-  const [competitions, setCompetitions] = useState(mockCompetitions);
   const [filters, setFilters] = useState<FilterType>({
     searchTerm: "",
     category: null,
@@ -132,6 +25,14 @@ const Competitions: React.FC = () => {
     deadline: null,
   });
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Fetch all competitions
+  const { data: allCompetitions = [], isLoading, error } = useQuery({
+    queryKey: ['competitions'],
+    queryFn: () => CompetitionService.getAllCompetitions(),
+  });
+  
+  const [filteredCompetitions, setFilteredCompetitions] = useState<Competition[]>([]);
   
   // Categories
   const categories = [
@@ -149,7 +50,9 @@ const Competitions: React.FC = () => {
   
   // Apply filters
   useEffect(() => {
-    let filtered = [...mockCompetitions];
+    if (!allCompetitions) return;
+    
+    let filtered = [...allCompetitions];
     
     // Search term
     if (filters.searchTerm) {
@@ -179,8 +82,8 @@ const Competitions: React.FC = () => {
       }
     }
     
-    setCompetitions(filtered);
-  }, [filters]);
+    setFilteredCompetitions(filtered);
+  }, [filters, allCompetitions]);
   
   // Reset filters
   const resetFilters = () => {
@@ -345,43 +248,61 @@ const Competitions: React.FC = () => {
         <section className="py-12">
           <div className="container mx-auto px-4 md:px-6">
             {/* Results info */}
-            <div className="flex items-center justify-between mb-8">
-              <p className="text-muted-foreground">
-                Showing <span className="font-medium text-foreground">{competitions.length}</span> competitions
-                {hasActiveFilters && " with applied filters"}
-              </p>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Sort by:</span>
-                <select className="bg-secondary rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option>Deadline (Soonest)</option>
-                  <option>Newest</option>
-                  <option>Most Participants</option>
-                </select>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <p className="text-muted-foreground">Loading competitions...</p>
               </div>
-            </div>
-            
-            {competitions.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-                {competitions.map((competition) => (
-                  <CompetitionCard
-                    key={competition.id}
-                    {...competition}
-                  />
-                ))}
-              </div>
-            ) : (
+            ) : error ? (
               <div className="bg-card/80 backdrop-blur-md shadow-sm rounded-lg p-8 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-secondary mb-4">
-                  <Search size={24} className="text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">No competitions found</h3>
+                <h3 className="text-lg font-medium mb-2">Failed to load competitions</h3>
                 <p className="text-muted-foreground mb-4">
-                  We couldn't find any competitions matching your search criteria.
+                  There was an error loading the competitions. Please try again later.
                 </p>
-                <Button variant="outline" onClick={resetFilters}>
-                  Clear All Filters
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Try Again
                 </Button>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-8">
+                  <p className="text-muted-foreground">
+                    Showing <span className="font-medium text-foreground">{filteredCompetitions.length}</span> competitions
+                    {hasActiveFilters && " with applied filters"}
+                  </p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Sort by:</span>
+                    <select className="bg-secondary rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary">
+                      <option>Deadline (Soonest)</option>
+                      <option>Newest</option>
+                      <option>Most Participants</option>
+                    </select>
+                  </div>
+                </div>
+                
+                {filteredCompetitions.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                    {filteredCompetitions.map((competition) => (
+                      <CompetitionCard
+                        key={competition.id}
+                        {...competition}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-card/80 backdrop-blur-md shadow-sm rounded-lg p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-secondary mb-4">
+                      <Search size={24} className="text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">No competitions found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      We couldn't find any competitions matching your search criteria.
+                    </p>
+                    <Button variant="outline" onClick={resetFilters}>
+                      Clear All Filters
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>

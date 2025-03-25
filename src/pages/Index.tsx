@@ -7,6 +7,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { Briefcase, Globe, Award, ArrowRight, Database, Code, FileQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ChatbotButton from "@/components/ChatbotButton";
 
 const Index: React.FC = () => {
   // Scroll to top on mount
@@ -289,6 +290,9 @@ const Index: React.FC = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Chatbot Button */}
+      <ChatbotButton />
     </div>
   );
 };

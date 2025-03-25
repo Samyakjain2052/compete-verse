@@ -36,6 +36,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CompetitionService from "@/services/competition-service";
+import { useQuery } from "@tanstack/react-query";
 
 const formSchema = z.object({
   title: z.string().min(5, {
@@ -84,6 +86,16 @@ const HostCompetition = () => {
     preview: null,
     name: "",
   });
+  const [idealData, setIdealData] = React.useState<FileState>({
+    file: null,
+    preview: null,
+    name: "",
+  });
+
+  const { data: hostedCompetitions = [], isLoading: isLoadingCompetitions } = useQuery({
+    queryKey: ['hostedCompetitions'],
+    queryFn: () => CompetitionService.getHostedCompetitions(),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -129,7 +141,7 @@ const HostCompetition = () => {
     });
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     // Check if all required files are uploaded
     if (!trainData.file || !testData.file || !demoFile.file) {
       toast.error("Please upload all required dataset files");
@@ -142,18 +154,44 @@ const HostCompetition = () => {
       return;
     }
 
-    // Submit form
-    console.log({
-      ...values,
-      trainData: trainData.file,
-      testData: testData.file,
-      demoFile: demoFile.file,
-    });
+    try {
+      // Create FormData for submission
+      const formData = new FormData();
+      
+      // Add form values
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (value instanceof Date) {
+            formData.append(key, value.toISOString());
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+      
+      // Add files
+      formData.append('trainData', trainData.file as File);
+      formData.append('testData', testData.file as File);
+      formData.append('demoFile', demoFile.file as File);
+      
+      // Add ideal data if provided
+      if (idealData.file) {
+        formData.append('idealData', idealData.file);
+      }
 
-    toast.success("Competition created successfully!");
-    // In a real application, we would send this data to the backend
-    // and then navigate to the dashboard
-    setActiveTab("manage");
+      // Submit to API
+      const result = await CompetitionService.createCompetition(formData);
+      
+      if (result.success) {
+        toast.success("Competition created successfully!");
+        setActiveTab("manage");
+      } else {
+        toast.error("Failed to create competition");
+      }
+    } catch (error) {
+      console.error("Error creating competition:", error);
+      toast.error("An error occurred while creating the competition");
+    }
   };
 
   return (
@@ -416,7 +454,7 @@ const HostCompetition = () => {
                   {/* Dataset Uploads */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Dataset Uploads</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Training Data Upload */}
                       <Card className="border border-dashed">
                         <CardContent className="p-4">
@@ -562,6 +600,57 @@ const HostCompetition = () => {
                           )}
                         </CardContent>
                       </Card>
+
+                      {/* Ideal Data Upload (NEW) */}
+                      <Card className="border border-dashed">
+                        <CardContent className="p-4">
+                          <h4 className="font-medium mb-2">
+                            Ideal Data (Ground Truth)
+                          </h4>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            The expected results/output for the competition. This will be used to evaluate submissions.
+                          </p>
+                          {!idealData.file ? (
+                            <div className="flex flex-col items-center">
+                              <label
+                                htmlFor="ideal-data"
+                                className="w-full cursor-pointer"
+                              >
+                                <div className="flex flex-col items-center justify-center py-4 text-center">
+                                  <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                                  <p className="text-sm text-muted-foreground">
+                                    Click to upload CSV/JSON
+                                  </p>
+                                </div>
+                                <input
+                                  id="ideal-data"
+                                  type="file"
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    handleFileChange(e, setIdealData, [
+                                      "csv",
+                                      "json",
+                                    ])
+                                  }
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm truncate max-w-[70%]">
+                                {idealData.name}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeFile(setIdealData)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
 
@@ -578,31 +667,26 @@ const HostCompetition = () => {
         </TabsContent>
 
         <TabsContent value="manage" className="space-y-8">
-          <ManagementDashboard />
+          <ManagementDashboard competitions={hostedCompetitions} isLoading={isLoadingCompetitions} />
         </TabsContent>
       </Tabs>
     </div>
   );
 };
 
-const ManagementDashboard = () => {
-  // For demo purposes, we'll create some mock data
-  const mockCompetitions = [
-    {
-      id: 1,
-      title: "Data Science Challenge 2023",
-      participants: 125,
-      submissions: 432,
-      status: "Active",
-    },
-    {
-      id: 2,
-      title: "ML Algorithm Competition",
-      participants: 87,
-      submissions: 256,
-      status: "Active",
-    },
-  ];
+type ManagementDashboardProps = {
+  competitions: any[];
+  isLoading: boolean;
+}
+
+const ManagementDashboard = ({ competitions = [], isLoading }: ManagementDashboardProps) => {
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Loading your competitions...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -611,7 +695,7 @@ const ManagementDashboard = () => {
           <CardTitle>Your Competitions</CardTitle>
         </CardHeader>
         <CardContent>
-          {mockCompetitions.length === 0 ? (
+          {competitions.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 You haven't created any competitions yet.
@@ -638,21 +722,23 @@ const ManagementDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockCompetitions.map((competition) => (
+                  {competitions.map((competition) => (
                     <tr key={competition.id} className="border-b">
                       <td className="px-4 py-3">
                         <span className="font-medium">{competition.title}</span>
                       </td>
-                      <td className="px-4 py-3">{competition.participants}</td>
-                      <td className="px-4 py-3">{competition.submissions}</td>
+                      <td className="px-4 py-3">{competition.participants || 0}</td>
+                      <td className="px-4 py-3">{competition.submissions?.length || 0}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                          {competition.status}
+                          {new Date(competition.endDate) > new Date() ? "Active" : "Closed"}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <Button variant="outline" size="sm">
-                          Manage
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={`/competitions/${competition.id}`}>
+                            Manage
+                          </a>
                         </Button>
                       </td>
                     </tr>
@@ -664,89 +750,100 @@ const ManagementDashboard = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Submission Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <div className="text-4xl font-bold">688</div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Total Submissions
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-6">
+      {competitions.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Submission Statistics</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="text-center">
-                <div className="text-2xl font-semibold">27</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Today's Submissions
+                <div className="text-4xl font-bold">
+                  {competitions.reduce((acc, comp) => acc + (comp.submissions?.length || 0), 0)}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Total Submissions
                 </p>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-semibold">212</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Unique Participants
-                </p>
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="text-center">
+                  <div className="text-2xl font-semibold">
+                    {competitions.reduce((acc, comp) => {
+                      const todaySubmissions = (comp.submissions || []).filter(s => {
+                        const subDate = new Date(s.dateSubmitted);
+                        const today = new Date();
+                        return subDate.getDate() === today.getDate() && 
+                               subDate.getMonth() === today.getMonth() && 
+                               subDate.getFullYear() === today.getFullYear();
+                      }).length;
+                      return acc + todaySubmissions;
+                    }, 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Today's Submissions
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-semibold">
+                    {competitions.reduce((acc, comp) => acc + (comp.participants || 0), 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Unique Participants
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Age Verification</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="text-2xl font-semibold text-green-600">175</div>
-                <p className="text-xs text-muted-foreground mt-1">Verified</p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Age Verification</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-2xl font-semibold text-green-600">-</div>
+                  <p className="text-xs text-muted-foreground mt-1">Verified</p>
+                </div>
+                <div>
+                  <div className="text-2xl font-semibold text-yellow-600">-</div>
+                  <p className="text-xs text-muted-foreground mt-1">Pending</p>
+                </div>
+                <div>
+                  <div className="text-2xl font-semibold text-red-600">-</div>
+                  <p className="text-xs text-muted-foreground mt-1">Rejected</p>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-semibold text-yellow-600">23</div>
-                <p className="text-xs text-muted-foreground mt-1">Pending</p>
+              <div className="mt-4">
+                <Button variant="outline" size="sm" className="w-full">
+                  Review Pending Verifications
+                </Button>
               </div>
-              <div>
-                <div className="text-2xl font-semibold text-red-600">14</div>
-                <p className="text-xs text-muted-foreground mt-1">Rejected</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <Button variant="outline" size="sm" className="w-full">
-                Review Pending Verifications
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Forum Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">Recent Posts</p>
-                <ul className="mt-2 space-y-2">
-                  <li className="text-sm">
-                    Question about the training dataset format...
-                  </li>
-                  <li className="text-sm">
-                    Is there a deadline extension possible?
-                  </li>
-                  <li className="text-sm">
-                    Having trouble with the submission process...
-                  </li>
-                </ul>
+          <Card>
+            <CardHeader>
+              <CardTitle>Forum Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium">Recent Posts</p>
+                  <ul className="mt-2 space-y-2">
+                    <li className="text-sm text-muted-foreground">
+                      No forum posts yet
+                    </li>
+                  </ul>
+                </div>
+                <Button variant="outline" size="sm" className="w-full">
+                  Moderate Forum
+                </Button>
               </div>
-              <Button variant="outline" size="sm" className="w-full">
-                Moderate Forum
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

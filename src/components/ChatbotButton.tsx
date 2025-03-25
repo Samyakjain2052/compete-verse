@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import GroqService from '@/services/groq-service';
 
 interface Message {
   id: string;
@@ -16,21 +17,33 @@ interface Message {
 const ChatbotButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your competition assistant. How can I help you today?',
+      text: 'Hello! I\'m your BattleCode assistant. How can I help you today?',
       sender: 'bot',
       timestamp: new Date(),
     },
   ]);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isOpen]);
+
   const toggleChat = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const handleSendMessage = async () => {
+    if (!message.trim() || isLoading) return;
 
     // Add user message
     const userMessage: Message = {
@@ -42,17 +55,34 @@ const ChatbotButton: React.FC = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setMessage('');
+    setIsLoading(true);
 
-    // Simulate bot response after a short delay
-    setTimeout(() => {
+    try {
+      // Get response from Groq API
+      const response = await GroqService.getChatResponse(message);
+      
+      // Add bot response
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Thanks for your message! Our support team will get back to you soon. In the meantime, feel free to browse our competitions or check out the leaderboard.",
+        text: response,
         sender: 'bot',
         timestamp: new Date(),
       };
+      
       setMessages((prev) => [...prev, botMessage]);
-    }, 1000);
+    } catch (error) {
+      // Handle error
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "I'm sorry, I couldn't process your request. Please try again later.",
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -82,7 +112,7 @@ const ChatbotButton: React.FC = () => {
                 <AvatarImage src="/placeholder.svg" />
                 <AvatarFallback>BC</AvatarFallback>
               </Avatar>
-              Competition Assistant
+              BattleCode Assistant
             </CardTitle>
           </CardHeader>
           
@@ -112,6 +142,7 @@ const ChatbotButton: React.FC = () => {
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
           </CardContent>
           
@@ -124,8 +155,13 @@ const ChatbotButton: React.FC = () => {
                 placeholder="Type your message..."
                 className="min-h-10 flex-1"
                 rows={1}
+                disabled={isLoading}
               />
-              <Button size="icon" onClick={handleSendMessage} disabled={!message.trim()}>
+              <Button 
+                size="icon" 
+                onClick={handleSendMessage} 
+                disabled={!message.trim() || isLoading}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </div>

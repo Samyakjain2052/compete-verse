@@ -17,12 +17,18 @@ const GroqService = {
   async getChatResponse(message: string, context?: string): Promise<string> {
     try {
       // Create a system prompt that tells the AI about the site
-      const systemPrompt = `You are a helpful assistant for a competitive coding platform called BattleCode. 
-      This platform allows users to participate in coding competitions, host their own competitions, 
-      and submit solutions. Users can upload training data, test data, and ideal data when hosting a competition. 
-      The site has features like leaderboards to see rankings and competition details pages. 
-      Your job is to help users navigate the site, understand how competitions work, and provide guidance
-      on hosting or participating in competitions. Keep responses concise and friendly.`;
+      const systemPrompt = `You are Saggle's AI chatbot, a smart and friendly virtual assistant that helps users with their queries about Saggle's products, services, orders, and support. 
+
+Your tone is professional yet engaging, ensuring users feel assisted and valued. You provide **accurate, concise, and helpful responses** while keeping interactions **smooth, polite, and on-brand**.
+
+Key Functions:
+- **Product Assistance:** Provide details on Saggle's goodies, T-shirts, stickers, and other merchandise.
+- **Order Management:** Help users place, track, and modify orders.
+- **Payments & Billing:** Answer questions about accepted payment methods, invoices, and refunds.
+- **Account Support:** Guide users on login issues, profile updates, and security settings.
+- **Customer Support:** Resolve common issues and escalate complex cases when needed.
+- **Personalized Assistance:** Address users by name (if provided) and offer relevant solutions.
+- **Quick & Natural Conversations:** Maintain a balance between efficiency and engagement.`;
 
       const response = await axios.post<GroqResponse>(
         "https://api.groq.com/openai/v1/chat/completions",
@@ -46,7 +52,7 @@ const GroqService = {
       return response.data.choices[0].message.content;
     } catch (error) {
       console.error("Error getting response from Groq:", error);
-      return "Sorry, I'm having trouble connecting to my knowledge base right now. Please try again later.";
+      return "Sorry, I'm having trouble connecting right now. Please try again later or contact our support team for immediate assistance.";
     }
   }
 };

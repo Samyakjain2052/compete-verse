@@ -22,7 +22,7 @@ const ChatbotButton: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your BattleCode assistant. How can I help you today?',
+      text: "Hello! I'm Saggle's virtual assistant. How can I help you today with our products, orders, or support?",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -74,7 +74,7 @@ const ChatbotButton: React.FC = () => {
       // Handle error
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm sorry, I couldn't process your request. Please try again later.",
+        text: "I'm sorry, I couldn't process your request. Please try again later or contact our support team directly.",
         sender: 'bot',
         timestamp: new Date(),
       };
@@ -110,9 +110,9 @@ const ChatbotButton: React.FC = () => {
             <CardTitle className="text-lg flex items-center">
               <Avatar className="h-8 w-8 mr-2">
                 <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback>BC</AvatarFallback>
+                <AvatarFallback>SG</AvatarFallback>
               </Avatar>
-              BattleCode Assistant
+              Saggle Assistant
             </CardTitle>
           </CardHeader>
           
@@ -152,7 +152,7 @@ const ChatbotButton: React.FC = () => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
+                placeholder="Ask about products, orders, or support..."
                 className="min-h-10 flex-1"
                 rows={1}
                 disabled={isLoading}

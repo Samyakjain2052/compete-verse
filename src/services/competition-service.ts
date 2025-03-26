@@ -19,30 +19,27 @@ const CompetitionService = {
   
   // Join a competition
   joinCompetition: async (competitionId: string) => {
-    const response = await axiosInstance.post<{ success: boolean; message: string }>(
+    const response = await axiosInstance.post<{ message: string }>(
       `/competitions/${competitionId}/join`
     );
     return response.data;
   },
   
   // Submit a solution for a competition
-  submitSolution: async (competitionId: string, formData: FormData) => {
-    const response = await axiosInstance.post<{ success: boolean; message: string }>(
+  submitSolution: async (competitionId: string, submissionFile: File) => {
+    const formData = new FormData();
+    formData.append('competitionId', competitionId);
+    formData.append('submissionFile', submissionFile);
+    
+    const response = await axiosInstance.post<{ 
+      id: number,
+      competitionId: number,
+      userId: number,
+      filePath: string,
+      score: number,
+      submittedAt: string
+    }>(
       `/submissions`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
-  },
-  
-  // Verify user ID for a competition (age verification)
-  verifyId: async (competitionId: string, formData: FormData) => {
-    const response = await axiosInstance.post<{ success: boolean; message: string }>(
-      `/competitions/${competitionId}/join`,
       formData,
       {
         headers: {
@@ -65,30 +62,33 @@ const CompetitionService = {
   
   // Get leaderboard for a competition
   getLeaderboard: async (competitionId: string) => {
-    const response = await axiosInstance.get<LeaderboardEntry[]>(
-      `/competitions/${competitionId}/leaderboard`
-    );
-    return response.data;
+    // Using the submissions array from the competition details as the leaderboard
+    const response = await axiosInstance.get<CompetitionDetails>(`/competitions/${competitionId}`);
+    return response.data.submissions as LeaderboardEntry[];
   },
   
   // Create a new competition (for hosts)
-  createCompetition: async (competitionData: FormData) => {
-    const response = await axiosInstance.post<{ success: boolean; competitionId: string }>(
+  createCompetition: async (formData: FormData) => {
+    const response = await axiosInstance.post<Competition>(
       '/competitions',
-      competitionData,
+      formData,
       {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       }
     );
-    return response.data;
+    return { success: true, competitionId: response.data.id.toString() };
   },
   
   // Get competitions hosted by current user
   getHostedCompetitions: async () => {
-    const response = await axiosInstance.get<Competition[]>('/competitions/hosted');
-    return response.data;
+    // Since the API doesn't have a dedicated endpoint for this,
+    // we'll get all competitions and filter on the client side
+    const allCompetitions = await CompetitionService.getAllCompetitions();
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    return allCompetitions.filter(comp => comp.hostId === currentUser.id);
   }
 };
 

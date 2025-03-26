@@ -11,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, role: UserRole) => Promise<void>;
   signOut: () => void;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,10 +21,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in service
+    // Check if user is stored in localStorage
     const storedUser = AuthService.getCurrentUser();
     if (storedUser) {
       setUser(storedUser);
+      // Optionally refresh user data from backend
+      AuthService.refreshUserData()
+        .then(updatedUser => {
+          if (updatedUser) {
+            setUser(updatedUser);
+          }
+        })
+        .catch(() => {/* Error handled by axios interceptor */});
     }
     setIsLoading(false);
   }, []);
@@ -60,6 +69,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success("Signed out successfully");
   };
 
+  const refreshUser = async (): Promise<User | null> => {
+    try {
+      const updatedUser = await AuthService.refreshUserData();
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+      return updatedUser;
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+      return null;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -69,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signUp,
         signOut,
+        refreshUser,
       }}
     >
       {children}

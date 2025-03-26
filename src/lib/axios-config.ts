@@ -2,8 +2,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from "sonner";
 
-// Get the API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Set API URL to your local backend
+const API_URL = 'http://localhost:5000/api';
 
 // Create an Axios instance with default config
 const axiosInstance = axios.create({

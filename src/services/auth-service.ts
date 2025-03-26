@@ -13,28 +13,25 @@ export interface RegisterData extends LoginCredentials {
 
 const AuthService = {
   login: async (credentials: LoginCredentials) => {
-    const response = await axiosInstance.post<{ token: string }>('/auth/login', credentials);
+    const response = await axiosInstance.post<{ token: string; user: User }>('/auth/login', credentials);
     
     // Save token to localStorage
     localStorage.setItem('authToken', response.data.token);
     
-    // Get user profile after login
-    const userResponse = await axiosInstance.get<User>('/auth/me');
-    localStorage.setItem('user', JSON.stringify(userResponse.data));
+    // Save user data
+    localStorage.setItem('user', JSON.stringify(response.data.user));
     
-    return { token: response.data.token, user: userResponse.data };
+    return response.data;
   },
   
   register: async (data: RegisterData) => {
-    const response = await axiosInstance.post<User>('/auth/register', data);
+    const response = await axiosInstance.post<{ token: string; user: User }>('/auth/register', data);
     
-    // After registration, perform login to get token
-    const loginResponse = await AuthService.login({ 
-      email: data.email, 
-      password: data.password 
-    });
+    // Save token and user data from registration response
+    localStorage.setItem('authToken', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
     
-    return loginResponse;
+    return response.data;
   },
   
   logout: () => {
@@ -45,6 +42,17 @@ const AuthService = {
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
+  },
+  
+  refreshUserData: async () => {
+    try {
+      const response = await axiosInstance.get<User>('/auth/me');
+      localStorage.setItem('user', JSON.stringify(response.data));
+      return response.data;
+    } catch (error) {
+      // If there's an error, it will be handled by the axios interceptor
+      return null;
+    }
   },
   
   // Method to check if user is authenticated
